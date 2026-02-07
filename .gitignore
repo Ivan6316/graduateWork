@@ -1,0 +1,8 @@
+.vs/
+*.ipch
+*.db
+*.sdf
+*.opensdf
+*.suo
+*.user
+*.userosscache
