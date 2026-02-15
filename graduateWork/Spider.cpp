@@ -1,4 +1,4 @@
-﻿#include "Spider.h"
+#include "Spider.h"
 #include <chrono>
 
 Spider::Spider(Config& config, Database& db)

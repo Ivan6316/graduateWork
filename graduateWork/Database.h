@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 #include <pqxx/pqxx>
 #include <shared_mutex>
 #include "Config.h"
@@ -10,8 +11,8 @@
 class Database
 {
 private:
-    pqxx::connection database_;
-    mutable std::shared_mutex databaseMutex_;  // <-- делаем mutable
+    std::string connectionString_;  // ← Храним строку подключения, а не само соединение
+    mutable std::shared_mutex databaseMutex_;
 
 public:
     // Конструктор с подключением к БД
@@ -62,10 +63,21 @@ public:
         int totalRelations;
     };
 
-    DatabaseStats getStatistics() const;  // <-- добавляем const
+    DatabaseStats getStatistics();
 
     // Проверка соединения
     bool isConnected() const;
+
+    // Вспомогательный метод для создания соединения
+    pqxx::connection createConnection() const;
+
+    // Отчистка данных
+    void deleteAllDocuments();
+
+private:
+    // Вспомогательный метод для выполнения операций в транзакции
+    template<typename Func>
+    auto executeTransaction(Func&& func) -> decltype(func(std::declval<pqxx::work&>()));
 };
 
 #endif // !DATABASE_H

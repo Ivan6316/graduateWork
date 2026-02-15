@@ -1,30 +1,16 @@
-﻿  main.cpp
-C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.50.35717\include\span(12): warning STL4038: The contents of <span> are available only with C++20 or later.
+﻿  Database.cpp
+  SearchServer.cpp
   Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
   - add -D_WIN32_WINNT=0x0601 to the compiler command line; or
   - add _WIN32_WINNT=0x0601 to your project's Preprocessor Definitions.
   Assuming _WIN32_WINNT=0x0601 (i.e. Windows 7 target).
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(18,18): warning C4566: символ, представленный универсальным именем символа "\U0001F4E2", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(22,22): warning C4566: символ, представленный универсальным именем символа "\U0001F6D1", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(28,22): warning C4566: символ, представленный универсальным именем символа "\U0001F6D1", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(32,18): warning C4566: символ, представленный универсальным именем символа "\U0001F44B", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(46,22): warning C4566: символ, представленный универсальным именем символа "\U0001F4CA", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(56,26): warning C4566: символ, представленный универсальным именем символа "\u2705", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(68,18): warning C4566: символ, представленный универсальным именем символа "\U0001F50D", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(84,22): warning C4566: символ, представленный универсальным именем символа "\U0001F4C4", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(90,22): warning C4566: символ, представленный универсальным именем символа "\U0001F4BE", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(94,22): warning C4566: символ, представленный универсальным именем символа "\U0001F5C3", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(94,22): warning C4566: символ, представленный универсальным именем символа "\uFE0F", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(99,22): warning C4566: символ, представленный универсальным именем символа "\U0001F4C8", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(105,22): warning C4566: символ, представленный универсальным именем символа "\U0001F577", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(105,22): warning C4566: символ, представленный универсальным именем символа "\uFE0F", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(125,22): warning C4566: символ, представленный универсальным именем символа "\U0001F310", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(132,22): warning C4566: символ, представленный универсальным именем символа "\u2705", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(134,22): warning C4566: символ, представленный универсальным именем символа "\U0001F4CB", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(139,22): warning C4566: символ, представленный универсальным именем символа "\U0001F504", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(148,22): warning C4566: символ, представленный универсальным именем символа "\U0001F3AF", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(153,22): warning C4566: символ, представленный универсальным именем символа "\U0001F44B", невозможно представить в текущей кодовой странице (1251)
-C:\Users\Dark\source\repos\graduateWork\graduateWork\main.cpp(158,22): warning C4566: символ, представленный универсальным именем символа "\u274C", невозможно представить в текущей кодовой странице (1251)
+  Spider.cpp
+  main.cpp
+  Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
+  - add -D_WIN32_WINNT=0x0601 to the compiler command line; or
+  - add _WIN32_WINNT=0x0601 to your project's Preprocessor Definitions.
+  Assuming _WIN32_WINNT=0x0601 (i.e. Windows 7 target).
+  Generating Code...
   graduateWork.vcxproj -> C:\Users\Dark\source\repos\graduateWork\x64\Debug\graduateWork.exe
   "pwsh.exe" не является внутренней или внешней
   командой, исполняемой программой или пакетным файлом.

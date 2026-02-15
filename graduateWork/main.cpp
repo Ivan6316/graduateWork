@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <memory>
 #include <csignal>
 #include <thread>
@@ -7,6 +7,7 @@
 #include "Database.h"
 #include "Spider.h"
 #include "SearchServer.h"
+#include <Windows.h>
 
 // Глобальные указатели для обработки сигналов
 std::unique_ptr<Spider> g_spider;
@@ -34,7 +35,7 @@ void signalHandler(int signal)
 }
 
 // Функция для вывода статистики в реальном времени
-void printStats(const Spider& spider, const Database& db)
+void printStats(const Spider& spider, Database& db)
 {
     while (true)
     {
@@ -62,10 +63,11 @@ void printStats(const Spider& spider, const Database& db)
 int main(int argc, char* argv[])
 {
     // Подключение Русского языка
-    setlocale(LC_ALL, "rus");
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
 
     std::cout << "========================================" << std::endl;
-    std::cout << "🔍 Поисковая система v1.0" << std::endl;
+    std::cout << "🔍 Поисковая система v1.1" << std::endl;
     std::cout << "========================================" << std::endl;
 
     try
@@ -93,6 +95,10 @@ int main(int argc, char* argv[])
         // Создаём таблицы если их нет
         std::cout << "🗃️  Создание таблиц БД..." << std::endl;
         db.creatingTables();
+
+        // Отчищаем старые данные
+        std::cout << "🧹 Очистка старой БД..." << std::endl;
+        db.deleteAllDocuments();
 
         // Получаем начальную статистику
         auto initialStats = db.getStatistics();
