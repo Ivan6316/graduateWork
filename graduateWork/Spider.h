@@ -77,10 +77,12 @@ public:
         int activeWorkers;
     };
 
-    SpiderStats getStats() const;  // <-- const метод
+    SpiderStats getStats() const;
 
     // Проверка, работает ли паук
-    bool isRunning() const;  // <-- const метод
+    bool isRunning() const;
+
+    bool isFinished() const;
 };
 
 #endif // SPIDER_H

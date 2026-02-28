@@ -85,9 +85,24 @@ std::string SearchServer::handleRequest(const std::string& request)
 {
     try
     {
-        std::istringstream request_stream(request);
-        std::string method, path;
-        request_stream >> method >> path;
+        // Разбираем запрос вручную
+        size_t headerEnd = request.find("\r\n\r\n");
+        if (headerEnd == std::string::npos) {
+            // Исправлено: используем generateErrorPage вместо generateErrorResponse
+            std::string html = generateErrorPage("Неверный формат HTTP запроса");
+            return formatHttpResponse(400, "Bad Request", "text/html", html);
+        }
+
+        std::string headers = request.substr(0, headerEnd);
+        std::string body;
+        if (request.length() > headerEnd + 4) {
+            body = request.substr(headerEnd + 4);
+        }
+
+        // Парсим первую строку
+        std::istringstream headerStream(headers);
+        std::string method, path, version;
+        headerStream >> method >> path >> version;
 
         std::cout << "📥 HTTP запрос: " << method << " " << path << std::endl;
 
@@ -95,175 +110,157 @@ std::string SearchServer::handleRequest(const std::string& request)
         {
             if (path == "/" || path == "/search" || path == "/index.html")
             {
-                // Главная страница с формой поиска
                 std::string html = generateSearchPage();
-
-                std::string response =
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + html;
-
-                return response;
+                return formatHttpResponse(200, "OK", "text/html", html);
             }
             else
             {
-                // 404 Not Found
-                std::string error = "<h1>404 Not Found</h1><p>Страница " + path + " не найдена</p>";
-
-                std::string response =
-                    "HTTP/1.1 404 Not Found\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(error.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + error;
-
-                return response;
+                // Исправлено: используем generateErrorPage
+                std::string html = generateErrorPage("404 Not Found");
+                return formatHttpResponse(404, "Not Found", "text/html", html);
             }
         }
         else if (method == "POST" && path == "/search")
         {
-            // Читаем тело запроса
-            std::string body;
-            std::string line;
-            while (std::getline(request_stream, line) && !line.empty())
-            {
-                // Пропускаем заголовки
-            }
-
-            // Читаем тело
-            while (std::getline(request_stream, line))
-            {
-                body += line + "\n";
-            }
-
-            // Парсим параметры формы
-            std::regex paramRegex(R"(query=([^&]+))");
+            // Извлекаем Content-Length
+            std::regex contentLengthRegex(R"(Content-Length:\s*(\d+))", std::regex::icase);
             std::smatch match;
+            int contentLength = 0;
 
-            std::string query;
-            if (std::regex_search(body, match, paramRegex) && match.size() > 1)
-            {
-                query = match[1].str();
-
-                // Декодируем URL-encoded строку
-                std::regex plusRegex("\\+");
-                query = std::regex_replace(query, plusRegex, " ");
-
-                // Декодируем %20 в пробелы
-                std::regex percentRegex("%20");
-                query = std::regex_replace(query, percentRegex, " ");
+            if (std::regex_search(headers, match, contentLengthRegex) && match.size() > 1) {
+                contentLength = std::stoi(match[1].str());
             }
 
-            if (query.empty())
-            {
+            // Если тело не полное, пробуем добрать (для простоты считаем, что все данные уже есть)
+            if (body.length() < static_cast<size_t>(contentLength)) {
+                std::cerr << "Предупреждение: тело запроса неполное" << std::endl;
+            }
+
+            // Парсим параметры из тела
+            std::string query = parsePostBody(body);
+
+            if (query.empty()) {
                 std::string html = generateErrorPage("Пустой поисковый запрос");
-
-                std::string response =
-                    "HTTP/1.1 400 Bad Request\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + html;
-
-                return response;
+                return formatHttpResponse(400, "Bad Request", "text/html", html);
             }
 
-            // Парсим запрос
+            // Декодируем URL-encoded строку
+            query = urlDecode(query);
+
+            // Убираем "query=" если есть
+            if (query.find("query=") == 0) {
+                query = query.substr(6);
+            }
+
+            if (query.empty()) {
+                std::string html = generateErrorPage("Пустой поисковый запрос");
+                return formatHttpResponse(400, "Bad Request", "text/html", html);
+            }
+
+            // Парсим слова
             std::vector<std::string> words = parseQuery(query);
 
-            if (words.empty())
-            {
-                std::string html = generateErrorPage("После обработки запрос стал пустым");
-
-                std::string response =
-                    "HTTP/1.1 400 Bad Request\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + html;
-
-                return response;
+            if (words.empty()) {
+                std::string html = generateErrorPage("Нет допустимых слов в запросе");
+                return formatHttpResponse(400, "Bad Request", "text/html", html);
             }
 
-            if (words.size() > 4)
-            {
+            if (words.size() > 4) {
                 std::string html = generateErrorPage("Слишком много слов в запросе (максимум 4)");
-
-                std::string response =
-                    "HTTP/1.1 400 Bad Request\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + html;
-
-                return response;
+                return formatHttpResponse(400, "Bad Request", "text/html", html);
             }
 
             // Выполняем поиск
             std::vector<Database::SearchResult> results;
-            try
-            {
+            try {
                 results = database_.searchDocuments(words, 10);
             }
-            catch (const std::exception& e)
-            {
+            catch (const std::exception& e) {
                 std::cerr << "Ошибка поиска в БД: " << e.what() << std::endl;
                 std::string html = generateErrorPage("Ошибка при поиске в базе данных");
-
-                std::string response =
-                    "HTTP/1.1 500 Internal Server Error\r\n"
-                    "Content-Type: text/html; charset=utf-8\r\n"
-                    "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                    "Connection: close\r\n"
-                    "\r\n" + html;
-
-                return response;
+                return formatHttpResponse(500, "Internal Server Error", "text/html", html);
             }
 
             // Генерируем страницу с результатами
             std::string html = generateResultsPage(results, query);
-
-            std::string response =
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html; charset=utf-8\r\n"
-                "Content-Length: " + std::to_string(html.size()) + "\r\n"
-                "Connection: close\r\n"
-                "\r\n" + html;
-
-            return response;
+            return formatHttpResponse(200, "OK", "text/html", html);
         }
         else
         {
-            // 405 Method Not Allowed
-            std::string error = "<h1>405 Method Not Allowed</h1><p>Метод " + method + " не поддерживается</p>";
-
-            std::string response =
-                "HTTP/1.1 405 Method Not Allowed\r\n"
-                "Content-Type: text/html; charset=utf-8\r\n"
-                "Content-Length: " + std::to_string(error.size()) + "\r\n"
-                "Connection: close\r\n"
-                "\r\n" + error;
-
-            return response;
+            // Исправлено: используем generateErrorPage
+            std::string html = generateErrorPage("405 Method Not Allowed");
+            return formatHttpResponse(405, "Method Not Allowed", "text/html", html);
         }
     }
     catch (const std::exception& e)
     {
         std::cerr << "Ошибка обработки запроса: " << e.what() << std::endl;
-
-        std::string error = "<h1>500 Internal Server Error</h1><p>" + std::string(e.what()) + "</p>";
-
-        std::string response =
-            "HTTP/1.1 500 Internal Server Error\r\n"
-            "Content-Type: text/html; charset=utf-8\r\n"
-            "Content-Length: " + std::to_string(error.size()) + "\r\n"
-            "Connection: close\r\n"
-            "\r\n" + error;
-
-        return response;
+        std::string html = generateErrorPage(std::string("Внутренняя ошибка сервера: ") + e.what());
+        return formatHttpResponse(500, "Internal Server Error", "text/html", html);
     }
+}
+
+// Новый вспомогательный метод для форматирования ответа
+std::string SearchServer::formatHttpResponse(int statusCode, const std::string& statusText,
+    const std::string& contentType,
+    const std::string& content)
+{
+    std::stringstream response;
+    response << "HTTP/1.1 " << statusCode << " " << statusText << "\r\n"
+        << "Content-Type: " << contentType << "; charset=utf-8\r\n"
+        << "Content-Length: " << content.size() << "\r\n"
+        << "Connection: close\r\n"
+        << "\r\n"
+        << content;
+    return response.str();
+}
+
+// Новый метод для парсинга тела POST запроса
+std::string SearchServer::parsePostBody(const std::string& body)
+{
+    // Ищем параметр query
+    size_t queryPos = body.find("query=");
+    if (queryPos == std::string::npos) {
+        return "";
+    }
+
+    size_t start = queryPos + 6; // длина "query="
+    size_t end = body.find('&', start);
+
+    if (end == std::string::npos) {
+        return body.substr(start);
+    }
+    else {
+        return body.substr(start, end - start);
+    }
+}
+
+std::string SearchServer::urlDecode(const std::string& encoded)
+{
+    std::string result;
+    result.reserve(encoded.size());
+
+    for (size_t i = 0; i < encoded.size(); ++i) {
+        if (encoded[i] == '%' && i + 2 < encoded.size()) {
+            int hexValue;
+            std::istringstream iss(encoded.substr(i + 1, 2));
+            if (iss >> std::hex >> hexValue) {
+                result += static_cast<char>(hexValue);
+                i += 2;
+            }
+            else {
+                result += encoded[i];
+            }
+        }
+        else if (encoded[i] == '+') {
+            result += ' ';
+        }
+        else {
+            result += encoded[i];
+        }
+    }
+
+    return result;
 }
 
 std::vector<std::string> SearchServer::parseQuery(const std::string& query)

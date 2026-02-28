@@ -81,6 +81,13 @@ private:
 </html>
 )";
 
+    // Вспомогательные методы
+    std::string formatHttpResponse(int statusCode, const std::string& statusText,
+        const std::string& contentType,
+        const std::string& content);
+    std::string parsePostBody(const std::string& body);
+    std::string urlDecode(const std::string& encoded);
+
 public:
     SearchServer(Config& config, Database& db);
     ~SearchServer();

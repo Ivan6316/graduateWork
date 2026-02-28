@@ -92,14 +92,14 @@ void Spider::processPage(const std::string& url, int depth)
 {
     try
     {
-        std::cout << "Попытка обработки страницы [" << depth << "]: " << url << std::endl;
+        std::cout << "[" << std::this_thread::get_id() << "] Обработка [" << depth << "]: " << url << std::endl;
 
         // Помечаем URL как обрабатываемый
         {
             std::lock_guard<std::mutex> lock(processedMutex_);
             if (processedUrls_.find(url) != processedUrls_.end())
             {
-                std::cout << "URL уже обработан: " << url << std::endl;
+                std::cout << "[" << std::this_thread::get_id() << "] URL уже обработан: " << url << std::endl;
                 return;
             }
             processedUrls_.insert(url);
@@ -108,7 +108,8 @@ void Spider::processPage(const std::string& url, int depth)
         // Проверяем, существует ли уже документ в БД
         if (database_.urlExists(url))
         {
-            std::cout << "Документ уже существует в БД: " << url << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Документ уже существует в БД: " << url << std::endl;
+
             return;
         }
 
@@ -116,14 +117,14 @@ void Spider::processPage(const std::string& url, int depth)
         std::string html;
         try
         {
-            std::cout << "Скачивание: " << url << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Скачивание: " << url << std::endl;
             html = downloader_.download(url);
             pagesDownloaded_++;
-            std::cout << "Успешно загружено: " << html.size() << " байт" << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Успешно загружено: " << html.size() << " байт" << std::endl;
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Ошибка загрузки " << url << ": " << e.what() << std::endl;
+            std::cerr << "[" << std::this_thread::get_id() << "] Ошибка загрузки " << url << ": " << e.what() << std::endl;
             return;
         }
 
@@ -131,31 +132,31 @@ void Spider::processPage(const std::string& url, int depth)
         Indexer::IndexingResult result;
         try
         {
-            std::cout << "Индексация: " << url << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Индексация: " << url << std::endl;
             result = indexer_.indexPage(html, url);
             pagesIndexed_++;
-            std::cout << "Индексация завершена, слов: " << result.wordsFrequency.size() << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Индексация завершена, слов: " << result.wordsFrequency.size() << std::endl;
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Ошибка индексации " << url << ": " << e.what() << std::endl;
+            std::cerr << "[" << std::this_thread::get_id() << "] Ошибка индексации " << url << ": " << e.what() << std::endl;
             return;
         }
 
         // Сохраняем в БД
         try
         {
-            std::cout << "Сохранение в БД: " << url << std::endl;
+            std::cout << "[" << std::this_thread::get_id() << "] Сохранение в БД: " << url << std::endl;
             int documentId = database_.savingDocument(url, result.title, result.cleanContent);
             if (documentId > 0 && !result.wordsFrequency.empty())
             {
                 database_.savingWords(documentId, result.wordsFrequency);
-                std::cout << "Сохранено в БД (ID: " << documentId << ")" << std::endl;
+                std::cout << "[" << std::this_thread::get_id() << "] Сохранено в БД (ID: " << documentId << ")" << std::endl;
             }
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Ошибка сохранения в БД " << url << ": " << e.what() << std::endl;
+            std::cerr << "[" << std::this_thread::get_id() << "] Ошибка сохранения в БД " << url << ": " << e.what() << std::endl;
             return;
         }
 
@@ -164,25 +165,49 @@ void Spider::processPage(const std::string& url, int depth)
         {
             try
             {
-                std::cout << "Извлечение ссылок из: " << url << std::endl;
+                std::cout << "[" << std::this_thread::get_id() << "] Извлечение ссылок из: " << url << std::endl;
                 std::vector<std::string> links = downloader_.extractLinks(html, url);
-                std::cout << "Найдено ссылок: " << links.size() << std::endl;
+                std::cout << "[" << std::this_thread::get_id() << "] Найдено ссылок: " << links.size() << std::endl;
 
+                int addedCount = 0;
                 for (const auto& link : links)
                 {
-                    std::cout << "Добавляем в очередь: " << link << std::endl;
-                    addTask(link, depth + 1);
+                    // Проверяем, не обрабатывали ли уже эту ссылку
+                    bool alreadyProcessed;
+                    {
+                        std::lock_guard<std::mutex> lock(processedMutex_);
+                        alreadyProcessed = (processedUrls_.find(link) != processedUrls_.end());
+                    }
+
+                    if (!alreadyProcessed)
+                    {
+                        addTask(link, depth + 1);
+                        addedCount++;
+                    }
                 }
+
+                std::cout << "[" << std::this_thread::get_id() << "] Добавлено новых ссылок: " << addedCount << std::endl;
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Ошибка извлечения ссылок " << url << ": " << e.what() << std::endl;
+                std::cerr << "[" << std::this_thread::get_id() << "] Ошибка извлечения ссылок " << url << ": " << e.what() << std::endl;
+            }
+        }
+
+        // После обработки страницы проверяем состояние очереди
+        {
+            std::lock_guard<std::mutex> lock(queueMutex_);
+            if (taskQueue_.empty())
+            {
+                std::cout << "[" << std::this_thread::get_id() << "] Очередь пуста" << std::endl;
+                // Если очередь пуста, уведомляем все потоки для проверки остановки
+                queueCV_.notify_all();
             }
         }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Критическая ошибка при обработке страницы " << url << ": " << e.what() << std::endl;
+        std::cerr << "[" << std::this_thread::get_id() << "] Критическая ошибка при обработке страницы " << url << ": " << e.what() << std::endl;
     }
 }
 
@@ -241,4 +266,15 @@ Spider::SpiderStats Spider::getStats() const
 bool Spider::isRunning() const
 {
     return activeWorkers_ > 0;
+}
+
+bool Spider::isFinished() const
+{
+    if (stopRequested_)
+    {
+        return true;
+    }
+
+    std::lock_guard<std::mutex> lock(queueMutex_);
+    return taskQueue_.empty() && activeWorkers_ == 0;
 }

@@ -20,6 +20,7 @@ Config::Config(const std::string& filePath)
 		// Читаем настройки паука
 		spiderMaxDepth_ = config.get<int>("spider.maxDepth");
 		spiderStartUrl_ = config.get<std::string>("spider.startUrl");
+		runSpider_ = config.get<bool>("spider.runSpider");
 
 		// Читаем настройки поисковика
 		searcherPort_ = config.get<int>("searcher.port");
@@ -47,3 +48,5 @@ const std::string& Config::getSpiderStartUrl() const { return spiderStartUrl_; }
 int Config::getSpiderMaxDepth() const { return spiderMaxDepth_; }
 
 int Config::getSearcherPort() const { return searcherPort_; }
+
+bool Config::shouldRunSpider() const { return runSpider_; }

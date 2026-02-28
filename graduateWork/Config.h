@@ -16,6 +16,7 @@ private:
 	// Параметры паука
 	std::string spiderStartUrl_{};
 	int spiderMaxDepth_{};
+	bool runSpider_;
 
 	// Параметры поисковика
 	int searcherPort_{};
@@ -34,6 +35,7 @@ public:
 	// Получение параметров паука
 	const std::string& getSpiderStartUrl() const;
 	int getSpiderMaxDepth() const;
+	bool shouldRunSpider() const;
 
 	// Получение параметров поисковика
 	int getSearcherPort() const;
